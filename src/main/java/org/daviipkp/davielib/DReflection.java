@@ -10,6 +10,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
 public class DReflection {
@@ -134,7 +135,21 @@ public class DReflection {
         JarURLConnection jrc = (JarURLConnection)resource.openConnection();
 
         try(JarFile jf = jrc.getJarFile()) {
-            //TODO
+            Enumeration<JarEntry> entries = jf.entries();
+            while(entries.hasMoreElements()) {
+                JarEntry element = entries.nextElement();
+                String n = element.getName();
+
+                if(n.startsWith(rPath) && n.endsWith(".class")) {
+                    String className = n.substring(0, n.length() - 6).replace('/', '.');
+                    try {
+                        Class<?> clazz = Thread.currentThread().getContextClassLoader().loadClass(className);
+                        ret.add(clazz);
+                    } catch (ClassNotFoundException | NoClassDefFoundError e) {
+                        System.err.println("While listing classes at " + rPath + ", failed to load class " + className);
+                    }
+                }
+            }
         }
 
         return ret;
